@@ -223,6 +223,8 @@ static void printoneline(acarsmsg_t * msg, int chn, time_t t)
 		fprintf(fdout, "#%1d (E:%1d) ", chn + 1, msg->err);
 	if (inmode != 2)
 		printtime(t);
+	if (msg->label[1] == 0x7f)
+		msg->label[1] = 'd';
 	fprintf(fdout, " %7s %6s %1c %2s %4s ", msg->addr, msg->fid, msg->mode,
 		msg->label, msg->no);
 	fprintf(fdout, "%s", txt);
