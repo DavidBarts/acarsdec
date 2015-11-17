@@ -206,7 +206,7 @@ int _lcompare(const struct kv *l1, const struct kv *l2)
     return strcmp(l1->key, l2->key);
 }
 
-char *explain(char *lstr)
+void explain(FILE *fp, char *lstr)
 {
     struct kv key, *expl;
     static bool unsorted = true;
@@ -227,7 +227,7 @@ char *explain(char *lstr)
         sizeof(explanations) / sizeof(key),
         sizeof(key),
         (int (*)(const void *, const void *)) _lcompare);
-    return expl == NULL ? "Unknown" : expl->value;
+    fputs(expl == NULL ? "Unknown" : expl->value, fp);
 }
 
 char UnknownH1[] = "Unknown";
@@ -262,12 +262,11 @@ struct kv h1_expl[] = {
     { "WO", "Weather observation" }
 };
 
-char *explain_h1(char *mbody)
+void explain_h1(FILE *fp, char *mbody)
 {
     struct kv key, *expl;
     static bool unsorted = true;
     char keybuf[3];
-    static char ret[256];
     char *rret, *mstart;
     int skipped;
 
@@ -285,8 +284,10 @@ char *explain_h1(char *mbody)
             break;
     }
 
-    if (strlen(mstart) < 3 || mstart[0] != '#')
-        return UnknownH1;
+    if (strlen(mstart) < 3 || mstart[0] != '#') {
+        fputs(UnknownH1, fp);
+        return;
+    }
 
     keybuf[0] = mstart[1];
     keybuf[1] = mstart[2];
@@ -294,8 +295,8 @@ char *explain_h1(char *mbody)
     key.key = keybuf;
 
     if (keybuf[0] >= '0' && keybuf[0] <= '9') {
-        snprintf(ret, 256, "%s (%s)", keybuf, AirlineH1);
-        return ret;
+        fprintf(fp, "%s (%s)", keybuf, AirlineH1);
+        return;
     }
 
     expl = bsearch(
@@ -306,6 +307,5 @@ char *explain_h1(char *mbody)
         (int (*)(const void *, const void *)) _lcompare);
     rret = expl == NULL ? UnknownH1 : expl->value;
 
-    snprintf(ret, 256, "%s (%s)", keybuf, rret);
-    return ret;
+    fprintf(fp, "%s (%s)", keybuf, rret);
 }

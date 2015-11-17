@@ -147,35 +147,48 @@ void outsv(acarsmsg_t * msg, int chn, time_t tm)
 	write(sockfd, pkt, strlen(pkt));
 }
 
-char *see(char *str)
+void seec(FILE *fp, char c)
 {
-	/* XXX - assumes output less than this */
-	static char ret[256];
-	char *sp, *rp;
-	int ord;
-	for(sp=str, rp=ret; *sp; sp++, rp++) {
-		ord = *sp & 0xff;
-		if (ord > 0x7f) {
-			*rp++ = 'M';
-			*rp++ = '-';
-			ord &= 0x7f;
-		}
-		if (ord < 0x20) {
-			*rp++ = '^';
-			ord += 0x40;
-		} else if (ord == 0x7f) {
-			*rp++ = '^';
-			ord = '?';
-		}
-		*rp = (char) ord;
-	}
-	*rp = '\0';
-	return ret;
+    if (c > '\177') {
+        putc('M', fp);
+        putc('-', fp);
+        c &= 0177;
+    }
+    if (c < '\040' || c == '\177') {
+        putc('^', fp);
+        c ^= 0100;
+    }
+    putc(c, fp);
+}
+
+void seestr(FILE *fp, char *str)
+{
+    char *sp;
+    for (sp=str; *sp; sp++)
+        seec(fp, *sp);
+}
+
+void seebuf(FILE *fp, char *buf)
+{
+    char *sp;
+    for (sp=str; *sp; sp++) {
+        if (*sp == '\t' || *sp == '\n') {
+            /* newlines and tabs get passed verbatim */
+            putc(c, fp);
+            continue;
+        } else if (*sp == '\r' && (sp[1] == '\0' || sp[1] == '\n')) {
+            /* carriage return before line feed or at end gets deleted */
+            continue;
+        } else {
+            /* everything else gets the standard treatment */
+            seec(fp, *sp)
+        }
+    }
 }
 
 static void printmsg(acarsmsg_t * msg, int chn, time_t t)
 {
-	char *explain(char *lstr), *explain_h1(char *body);
+	void explain(FILE *fp, char *lstr), explain_h1(FILE *fp, char *body);
 #if defined (WITH_RTL) || defined (WITH_AIR)
 	if (inmode >= 3)
 		fprintf(fdout, "\n[#%1d (F:%3.3f L:%3d E:%1d) ", chn + 1,
@@ -192,13 +205,30 @@ static void printmsg(acarsmsg_t * msg, int chn, time_t t)
 		fprintf(fdout, "\n");
 	}
 	fprintf(fdout, "Mode: %1c\n", msg->mode);
-	fprintf(fdout, "Msg. label: %s (%s)\n", see(msg->label), explain(msg->label));
+
+	fputs("Msg. label: ", fdout);
+	seestr(fdout, msg->label);
+	fputs(" (", fdout);
+	explain(fdout, msg->label);
+	fputs(")\n", fdout);
+
 	fprintf(fdout, "Block id: %c ", msg->bid);
-	fprintf(fdout, "Ack: %c\n", msg->ack);
+
+	fputs("Ack: ", fdout);
+	seec(fdout, msg->ack);
+	putc('\n', fdout);
+
 	fprintf(fdout, "Msg. no: %s\n", msg->no);
-	if (!strcmp(msg->label, "H1"))
-		fprintf(fdout, "Msg. source: %s\n", explain_h1(msg->txt));
-	fprintf(fdout, "Message :\n%s\n", msg->txt);
+
+	if (!strcmp(msg->label, "H1")) {
+	    fputs("Msg. source: ", fdout);
+	    explain_h1(fdout, msg->txt);
+	    putc('\n', fdout);
+	}
+
+	fputs("Message :\n", fdout);
+	seebuf(fdout, msg->txt);
+
 	if (verbose && msg->be == 0x17)
 		fprintf(fdout, "Block End\n");
 
@@ -215,6 +245,11 @@ static void printoneline(acarsmsg_t * msg, int chn, time_t t)
 	for (pstr = txt; *pstr != 0; pstr++)
 		if (*pstr == '\n' || *pstr == '\r')
 			*pstr = ' ';
+
+	if (msg->ack == 0x15)
+		msg->ack = '!';
+	if (msg->label[1] == 0x7f)
+		msg->label[1] = 'd';
 
 	if (inmode >= 3)
 		fprintf(fdout, "#%1d (L:%3d E:%1d) ", chn + 1, msg->lvl,
@@ -252,8 +287,8 @@ void outputmsg(const msgblk_t * blk)
 
 	/* ACK/NAK */
 	msg.ack = blk->txt[k];
-	if (msg.ack == 0x15)
-		msg.ack = '!';
+	/* if (msg.ack == 0x15)
+		msg.ack = '!'; */
 	k++;
 
 	msg.label[0] = blk->txt[k];
