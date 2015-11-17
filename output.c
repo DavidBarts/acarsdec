@@ -171,7 +171,7 @@ void seestr(FILE *fp, char *str)
 void seebuf(FILE *fp, char *buf)
 {
     char *sp;
-    for (sp=str; *sp; sp++) {
+    for (sp=buf; *sp; sp++) {
         if (*sp == '\t' || *sp == '\n') {
             /* newlines and tabs get passed verbatim */
             putc(c, fp);
@@ -181,7 +181,7 @@ void seebuf(FILE *fp, char *buf)
             continue;
         } else {
             /* everything else gets the standard treatment */
-            seec(fp, *sp)
+            seec(fp, *sp);
         }
     }
 }
