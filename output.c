@@ -174,7 +174,7 @@ void seebuf(FILE *fp, char *buf)
     for (sp=buf; *sp; sp++) {
         if (*sp == '\t' || *sp == '\n') {
             /* newlines and tabs get passed verbatim */
-            putc(c, fp);
+            putc(*sp, fp);
             continue;
         } else if (*sp == '\r' && (sp[1] == '\0' || sp[1] == '\n')) {
             /* carriage return before line feed or at end gets deleted */
