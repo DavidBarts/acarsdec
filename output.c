@@ -228,6 +228,7 @@ static void printmsg(acarsmsg_t * msg, int chn, time_t t)
 
 	fputs("Message :\n", fdout);
 	seebuf(fdout, msg->txt);
+	putc('\n', fdout);
 
 	if (verbose && msg->be == 0x17)
 		fprintf(fdout, "Block End\n");
