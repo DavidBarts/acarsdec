@@ -147,7 +147,7 @@ void outsv(acarsmsg_t * msg, int chn, time_t tm)
     write(sockfd, pkt, strlen(pkt));
 }
 
-void seec(FILE *fp, char c)
+void seec(FILE *fp, unsigned char c)
 {
     if (c > '\177') {
         putc('M', fp);
