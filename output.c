@@ -103,7 +103,7 @@ int initOutput(char *logfilename, char *Rawaddr)
 
 static void printtime(time_t t)
 {
-    static char s[32];
+    char s[32];
 
     if (t == 0)
         return;
