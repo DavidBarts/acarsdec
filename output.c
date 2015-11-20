@@ -356,7 +356,7 @@ void outputmsg(const msgblk_t * blk)
         break;
     default:
         twiddle(&msg);
-        break
+        break;
     }
 
     if (sockfd > 0) {
