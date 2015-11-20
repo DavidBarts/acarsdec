@@ -268,6 +268,14 @@ static void printoneline(acarsmsg_t * msg, int chn, time_t t)
     fflush(fdout);
 }
 
+void twiddle(msgblk_t *msg)
+{
+    if (msg->ack == 0x15)
+        msg->ack = '!';
+    if (msg->label[1] == 0x7f)
+        msg->label[1] = 'd';
+}
+
 void outputmsg(const msgblk_t * blk)
 {
     acarsmsg_t msg;
@@ -288,15 +296,11 @@ void outputmsg(const msgblk_t * blk)
 
     /* ACK/NAK */
     msg.ack = blk->txt[k];
-    /* if (msg.ack == 0x15)
-        msg.ack = '!'; */
     k++;
 
     msg.label[0] = blk->txt[k];
     k++;
     msg.label[1] = blk->txt[k];
-    /* if (msg.label[1] == 0x7f)
-        msg.label[1] = 'd'; */
     k++;
     msg.label[2] = '\0';
 
@@ -340,21 +344,25 @@ void outputmsg(const msgblk_t * blk)
     /* txt end */
     msg.be = blk->txt[blk->len - 1];
 
+    switch (outtype) {
+    case 1:
+        twiddle(&msg);
+        printoneline(&msg, blk->chn, blk->tm);
+        break;
+    case 2:
+        /* printmsg wants it un-twiddled */
+        printmsg(&msg, blk->chn, blk->tm);
+        twiddle(&msg);
+        break;
+    default:
+        twiddle(&msg);
+        break
+    }
+
     if (sockfd > 0) {
         if (netout == 0)
             outpp(&msg);
         else
             outsv(&msg, blk->chn, blk->tm);
-    }
-
-    switch (outtype) {
-    case 0:
-        break;
-    case 1:
-        printoneline(&msg, blk->chn, blk->tm);
-        break;
-    case 2:
-        printmsg(&msg, blk->chn, blk->tm);
-        break;
     }
 }
