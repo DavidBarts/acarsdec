@@ -268,7 +268,7 @@ static void printoneline(acarsmsg_t * msg, int chn, time_t t)
     fflush(fdout);
 }
 
-void twiddle(msgblk_t *msg)
+void twiddle(acarsmsg_t *msg)
 {
     if (msg->ack == 0x15)
         msg->ack = '!';
